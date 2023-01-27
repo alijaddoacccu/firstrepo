@@ -1,3 +1,6 @@
 1. application Resasoning 
 
  this application will chnage the world
+
+2- application development 
+	need to use c# to develop this application
