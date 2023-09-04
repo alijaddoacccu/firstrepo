@@ -1,0 +1,799 @@
+---
+title: "Session-2, Linear Regression: Examples and Exercises"
+author: "Ali Jaddoa, BSc, MSc, PhD Computer Science, email: Ali.Jaddoa@Canterbury.ac.uk"
+
+date: "08/09/2023"
+
+output: pdf_document
+---
+
+# 1. Linear Regression: Introduction
+
+## Linear Regression example
+
+```{r Linear Regression Example, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# Load required library
+library(ggplot2)
+
+set.seed(123) # Setting a seed for reproducibility
+X <- seq(1, 10, 0.5) # Independent variable (X) with values from 1 to 10
+Y <- 2 * X + rnorm(length(X), mean = 0, sd = 2) # Dependent variable (Y) with noise
+
+data <- data.frame(X, Y)
+
+plot <- ggplot(data, aes(x = X, y = Y)) +
+        geom_point(color = "blue") +          
+        geom_smooth(method = "lm", se = FALSE, color = "red") +  
+        labs(title = "Linear Regression Example",
+             x = "Independent Variable (X)",
+             y = "Dependent Variable (Y)") +
+        theme_minimal()
+
+# Display the plot
+print(plot)
+```
+
+## The goal is to find the best-fitting line that minimizes the overall distance between the line and the data points.
+
+-   The relationship can be
+
+    -   Positive (positive correlation between X and Y) or
+
+    -   Negative (negative correlation between X and Y)
+
+```{r NegVs Pos relation, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# Step 1: Install and load necessary packages
+library(ggplot2)
+
+# Step 2: Create or import your datasets for positive and negative relationships
+# Replace 'independent_var_pos'/'independent_var_neg' and 'dependent_var_pos'/'dependent_var_neg'
+#with your actual variable names.
+independent_var_pos <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+dependent_var_pos <- c(2, 4, 5, 7, 8, 9, 10, 12, 14, 15)
+
+independent_var_neg <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+dependent_var_neg <- c(15, 13, 12, 10, 9, 8, 7, 6, 5, 3)
+
+# Step 3: Perform linear regression for positive and negative relationships
+lm_model_pos <- lm(dependent_var_pos ~ independent_var_pos)
+lm_model_neg <- lm(dependent_var_neg ~ independent_var_neg)
+
+# Step 4: Create the plots for positive and negative relationships
+# Plot for positive relationship
+plot_pos <- ggplot(data = data.frame(x = independent_var_pos, y = dependent_var_pos), aes(x = x, y = y)) +
+  geom_point(color = "blue") +                  # Plot the data points
+  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Add the best fit line
+  labs(title = "+ Relationship",
+       x = "Independent Variable",
+       y = "Dependent Variable") +
+  theme_minimal()
+
+# Plot for negative relationship
+plot_neg <- ggplot(data = data.frame(x = independent_var_neg, y = dependent_var_neg), aes(x = x, y = y)) +
+  geom_point(color = "blue") +                  # Plot the data points
+  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Add the best fit line
+  labs(title = "-  Relationship",
+       x = "Independent Variable",
+       y = "Dependent Variable") +
+  theme_minimal()
+
+# Display both plots side by side
+library(gridExtra)
+grid.arrange(plot_pos, plot_neg, ncol = 2)
+
+
+```
+
+\pagebreak
+
+# 2. Simple linear regression -- model building
+
+-   Simple linear regression estimates how much $Y$ will change when $X$ changes by a certain amount. With the correlation coefficient, the variables $X$ and $Y$ are inter‐ changeable. With regression, we are trying to predict the $Y$ variable from $X$ using a linear relationship (i.e., a line):
+
+$$Y = \beta_0 + \beta_1X+  \epsilon $$
+
+|                                                           |                         |                                                                           |
+|:---------------------------------------------------------:|:-----------------------:|:--------------------------------------------------------------------------|
+|                         $\beta_0$                         | intercept (coefficient) | The predicted value of $Y$ when $X$ = 0.                                  |
+|                         $\beta_1$                         |   Slope (coefficient)   | How much we expect $Y$ to change as $X$ increases                         |
+|                            $Y$                            |         Target          | Response or dependent variable                                            |
+|                            $X$                            |     Feature victor      | Predictor or independent variable                                         |
+|    $$                                                     
+                                  \epsilon                  
+                                                      $$    |       Error term        | Accounts for the variability/noise not explained by the regression model. |
+
+-   The simple linear regression for individual observation looks like this:
+
+$$
+Y_i=\beta_0+\beta_1X_i,   i=1,..,n
+$$
+
+## 2.1 Example-1
+
+A Dataset "LungDisease.csv" consist of number of years a worker was exposed to cotton dust (Exposure) and a measure of lung capacity (PEFR or "peak expiratory flow rate"). How is PEFR related to Exposure?
+
+1.  Let's create scatterplot to display the data points. What can you tell?
+
+    ```{r fig.height=4, fig.width=4}
+    lung <- read.csv('LungDisease.csv')
+    plot(lung$Exposure, lung$PEFR, xlab="Exposure", ylab="PEFR")
+    ```
+
+    $$
+     Y=\beta_0+\beta_1X
+    $$ $$                 
+     PEFR = \beta_0 + \beta_1Exposure
+    $$
+
+2.  The relationship does not seem to be perfectly linear. This is due to the fact, that the response variable is affected by other unknown and/or random processes. Therefore, in some case error ($\epsilon$)will be added to the equation, like so:
+
+    $$
+     PEFR = \beta_0 + \beta_1Exposure+ \epsilon
+    $$
+
+3.  Use help function to find what the function `lm` does?
+
+    ```{r echo=TRUE}
+    #help(lm)
+    ```
+
+4.  The **lm** function in R can be used to fit a linear regression:
+
+    ```{r echo=TRUE}
+    lung <- read.csv('LungDisease.csv')
+    model <- lm(PEFR ~ Exposure, data=lung)
+    model
+    ```
+
+5.  The intercept, or $\beta_0$, is $424.583$ and can be interpreted as the predicted PEFR for a worker with zero years exposure. The regression coefficient, or $\beta_1$ can be interpreted as follows: for each additional year that a worker is exposed to cotton dust, the worker's PEFR measurement is reduced by $–4.185$.
+
+6.  Let's find the regression line.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+    
+    lung <- read.csv('LungDisease.csv')
+    model <- lm(PEFR ~ Exposure, data=lung)
+    library(ggplot2)
+    ggplot(data = lung, aes(x = Exposure, y = PEFR)) +
+      geom_point(color = "black") +
+      geom_smooth(method = "lm", se = FALSE, color = "red") +  
+      labs(
+           x = "Exposure",
+           y = "PEFR") +
+      theme_minimal()
+
+```
+
+## 2.2 Example-2
+
+Build a linear regression model that fits on the `airquality_data` where the response variable is ozone concentration and the explanatory variable is the speed of wind using `lm` function in R.
+
+1.  Building the formula
+
+$$
+ ozone = \beta_0 + \beta_1wind
+$$
+
+2.  building the model in R, and get the summary for the built model.
+
+    ```{r}
+    # First specify the dataset
+    airquality_data <- read.csv('airquality_data.csv')
+    simple_model <- lm(formula=ozone ~ wind, data=airquality_data)
+    # Get a summary of the model
+    summary(simple_model)
+    ```
+
+    The summary gives us a range of diagnostic information about the model we've fitted:
+
+    1.  **Call:** This is an R feature that shows what function and parameters were used to create the model.
+
+    2.  **Residuals:** difference of the observed value and the predicted value.
+
+    3.  **Estimate:** coefficient estimates for the intercept and explanatory variables.
+
+    4.  **Std Error:** standard errors (i.e. an estimate of the uncertainty) of the coefficient estimates.
+
+    5.  **t value**: t-statistic for the t-test comparing whether the coefficient is different to 0.
+
+    6.  **Pr(\>\|t\|):** p-value for the t statistics, giving the significance of coefficient.
+
+    7.  **Residual standard error:** an expression of the variation of the observations around the regression line.
+
+    8.  **Multiple R-squared/Adj. R-squared:** The proportion of the variance in the observed values explained by the model. The Adj. R-squared takes into account the number of variables in the model.
+
+    9.  **F-statistic, p-value:** Model fit info (allow you to compare different models to assess the best one)
+
+3.  p-value helps determine significance of the relationship between \$wind\$ and \$ozone\$.
+
+    -   Note: The smaller the p-value, the stronger, the more significant the relationship is considered to be, also the stronger he evidence against the null hypothesis
+
+    -   p-value=$1.667e-12$ suggests that changes in the explanatory variable (`wind`) are associated with changes in the response variable (`ozone`).
+
+    -   We can also see that R2=0.282 which means that the speed of wind explains 28.2% of the variance in average ozone concentration.
+
+4.  Regression coefficients:
+
+    -   $\beta_0=85.2$, $\beta_1= -4.32$
+
+    -   We can re-write the regression model as follows:
+
+        $$
+        \hat{ozone}= 85.2 +(-4.32) * wind
+        $$
+
+    -   **Intercept interpretation:** The model predicted mean ozone concentration is 85.2 parts in billion when the speed of the wind is 0 miles per hours.
+
+        **Slope interpretation** If the speed of wind increase by 1 mile per hour, we predict the daily average ozone concentration decreases by 4.32 parts per billion.
+
+    -   To better understand this, consider the daily reading of mean ozone concentration for two different values of speed of the wind. The first is when the wind speed is 7 miles per hours and the second is when the wind speed is 8 miles per hours. Now let's compute daily mean ozone concentration using the estimated regression coefficients.
+
+        ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+        wind_speed <- c(7,8)
+        # Compute ozone concentration when wind speed is 7 mph and 8mph
+        85.2-4.32*wind_speed
+        ```
+
+    ## 2.3 Exercise-1 {#sec-2.3-exercise}
+
+    1.  Build a linear regression model on the `airquality_data` where the response variable is ozone concentration and the explanatory variable is the temperature.
+
+    2.  Interpret your estimated regression parameters.
+
+    3.  Rely on the previously built model above.
+
+        [***\
+        The solution can be located in Section 11, which is situated at the end of this document.***]{.underline}
+
+    ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+    # Fit linear model using lm()
+    simple_model_exercise <- lm(formula=ozone ~ temp, data=airquality_data)
+
+    # Get a summary of the model
+    summary(simple_model_exercise)
+
+    #Intercept interpretation: The model predicted mean ozone concentration is -101.6 parts 
+    #in billion when the temperature is 0 degrees Fahrenheit.
+
+    #Slope interpretation: If the temperature increase by 1 degree Fahrenheit, 
+    #we predict the daily average ozone concentration increases by 1.85 parts per billion
+
+
+    ```
+
+    # 3. Predicting using the regression model
+
+    -   Once we have created a linear regression model, we can use the `predict()` function to predict the response variable for new values given explanatory variables.
+
+        ```{r draw o3VSwind, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+            
+            AirData <- read.csv('airquality_data.csv')
+            model <- lm(ozone ~ wind, data=AirData)
+            library(ggplot2)
+            ggplot(data = AirData, aes(x = wind, y = ozone)) +
+              geom_point(color = "black") +
+              geom_smooth(method = "lm", se = FALSE, color = "red") +  
+              labs(
+                   x = "Wind",
+                   y = "Ozone") +
+              theme_minimal()
+            
+            new_wind <- data.frame(wind = c(23, 26, 30))
+
+
+        # Use the predict function on new values
+        # And also get confidence intervals for these
+        predict(simple_model, newdata = new_wind, interval = "confidence")
+
+        ```
+
+    ```{r}
+    # Create some new data
+    new_wind <- data.frame(wind = c(23, 26, 30))
+
+
+    # Use the predict function on new values
+    # And also get confidence intervals for these
+    predict(simple_model, newdata = new_wind, interval = "confidence")
+
+    ```
+
+    -   The `fit` column is the predicted value, with `lwr` and `upr` showing the confidence intervals.
+
+    When the wind speed is 23 mph, the average ozone concentration is -14.26965 parts per billion - an unfeasible value.
+
+    ## **3.1 Exercise-2**
+
+    Predict the ozone concentration when the temperature is 48,52 and 55 degrees Fahrenheit using the linear model created in the last exercise (2.3-exercise)
+
+    [***\
+    The solution can be located in Section 11, which is situated at the end of this document.***]{.underline}
+
+    ```{r draw o3 vs temp, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+        
+        AirData <- read.csv('airquality_data.csv')
+        model <- lm(ozone ~ temp, data=AirData)
+    ```
+
+    ```{r eval=FALSE, include=FALSE}
+    # Add some new data
+    simple_model_exercise <- lm(formula=ozone ~ temp, data=airquality_data)
+
+    new_temp <- data.frame(temp = c(48, 52, 55))
+
+    # Use the predict function on new values
+    # And also get confidence intervals for these
+    predict(simple_model_exercise, newdata = new_temp, interval = "confidence")
+    ```
+
+# 4. Multiple linear regression
+
+A multiple linear regression model is a generalisation of the simple linear regression model. In the multiple linear regression model, there is one response variable and more than one explanatory variable. The model will contain the intercept $\beta_0$and more than one coefficient, denoted as $\beta_0$ ,$\beta_1$ ,...,$\beta_k$where k is the number of explanatory variables in the model. The mathematical equation of a multiple linear regression model is shown below:
+
+$$
+Y_i=\beta_0+\beta_1X_{i1}+\beta_2X_{i2}+...+\beta_kX_{ik}+\epsilon_i
+$$
+
+$$
+ ozone = \beta_0 + \beta_1wind +\beta_2temp +\epsilon
+$$
+
+```{r}
+# First specify your formula then the dataset
+airquality_data<-read.csv('airquality_data.csv')
+multiple_model <- lm(formula=ozone ~ wind + temp, data=airquality_data)
+
+# Get a summary of the model
+summary(multiple_model)
+```
+
+$$
+ \hat{ozone}= -41.2 - 2.6 *wind_1 +1.4*temp 
+$$
+
+## 4.1 Exercise-3
+
+Using airquality_data data, fit a multiple linear regression model with explanatory variables wind, temp and solar_r.
+
+[***\
+The solution can be located in Section 11, which is situated at the end of this document.***]{.underline}
+
+```{r eval=FALSE, include=FALSE}
+# First specify your formula then the dataset 
+multiple_model_exercise <- lm(formula=ozone ~ wind + temp + solar_r, data=airquality_data) 
+# Get a summary of the model 
+summary(multiple_model_exercise)
+
+```
+
+# 5. Fitted values and residuals
+
+Before describing regression assumptions and regression diagnostics, two key concepts in regression analysis need to be explained:
+
+1.  Fitted values
+
+2.  Residuals
+
+The fitted (or predicted) values are the y-values that you would expect for the given x-values according to the built regression model (or visually, the best-fitting straight regression line). The fitted value is denoted as in our simple linear regression example, the fitted (predicted) ozone concentration is
+
+$$
+\hat{ozone}= 85.2 +(-4.32) * wind
+$$
+
+The estimated random error is called the residuals and it is the difference of the observed value $Y_i$and the fitted (predicted) value $\hat{Y_i}$. So, the residual is denoted as:
+
+$$
+\hat{e_i}= Y_i-\hat{Y_i}
+$$
+
+```{r}
+library(magrittr) # needs to be run every time you start R and want to use %>%
+library(dplyr)    
+
+lung <- read.csv('LungDisease.csv')
+model <- lm(PEFR ~ Exposure, data=lung)
+fitted <- predict(model)
+resid <- residuals(model)
+
+lung1 <- lung %>%
+  mutate(Fitted=fitted,
+         positive = PEFR>Fitted) %>%
+  group_by(Exposure, positive) %>%
+  summarize(PEFR_max = max(PEFR), 
+            PEFR_min = min(PEFR),
+            Fitted = first(Fitted), 
+            .groups='keep') %>%
+  ungroup() %>%
+  mutate(PEFR = ifelse(positive, PEFR_max, PEFR_min)) %>%
+  arrange(Exposure)
+
+plot(lung$Exposure, lung$PEFR, xlab="Exposure", ylab="PEFR")
+abline(a=model$coefficients[1], b=model$coefficients[2], col="blue", lwd=2)
+segments(lung1$Exposure, lung1$PEFR, lung1$Exposure, lung1$Fitted, col="red", lty=3)
+
+```
+
+# 6. Regression Assumptions
+
+-   Linear relationship: The relationship between X and Y is linear.
+-   Independence: The observations are independent of each other.
+-   Homoscedasticity: The variability of the residuals is constant across all values of X.
+-   Normality: The residuals are normally distributed.
+
+## Residual Diagnostics Plots
+
+1.  **Linearity of the data**
+
+    ```{r}
+    airData <- read.csv('airquality_data.csv')
+    Airmodel <- lm(ozone ~ temp, data=airData)
+    plot(Airmodel,1)
+    ```
+
+2.  **Normality of residual**
+
+```{r}
+airData <- read.csv('airquality_data.csv')
+Airmodel <- lm(ozone ~ temp, data=airData)
+plot(Airmodel,2)
+```
+
+3.  **Homoscedasticity**
+
+    ```{r}
+    airData <- read.csv('airquality_data.csv')
+    Airmodel <- lm(ozone ~ temp, data=airData)
+    plot(Airmodel,3)
+
+    ```
+
+4.  **Influential**
+
+```{r}
+airData <- read.csv('airquality_data.csv')
+Airmodel <- lm(ozone ~ wind, data=airData)
+plot(Airmodel,5)
+```
+
+-   **Cook's Distance**
+
+    ```{r}
+    airData <- read.csv('airquality_data.csv')
+    Airmodel <- lm(ozone ~ wind, data=airData)
+    plot(Airmodel,4)
+    ```
+
+    ## 6.1 Exercise-4
+
+    Fit a multiple linear regression on **airquality_data** where the response variable is **ozone** and all explanatory variables are added?
+
+    [***\
+    The solution can be located in Section 11, which is situated at the end of this document.***]{.underline}
+
+    ```{r eval=FALSE, include=FALSE}
+    # Fit a multiple linear regression
+    # the response variable is ozone 
+    # all explanatory variable 
+    airData <- read.csv('airquality_data.csv')
+    multiple_exercise <- lm(formula=ozone ~ ., data=airData)
+    summary(multiple_exercise)
+    ```
+
+    ```{r eval=FALSE, include=FALSE}
+    # Change the panel layout to 2 x 2
+    # Look at all 4 plots at once 
+    par(mfrow = c(2, 2))
+
+    # Use plot() function to create diagnostic plots
+    plot(multiple_exercise)
+    ```
+
+# 7. Model Transformation
+
+We have seen that the `predict()` function gives us negative values for ozone levels and we have seen above that our regression assumptions are not met. In this case, we can perform transformations inside the model formula where we fit the linear regression model with the response variable `ozone` and the explanatory variable `wind`. First, we will create a scatterplot of `ozone` and `wind` variables to see the relationship between them.
+
+```{r echo=TRUE}
+#Create a scatter plot
+# Specify the x and y axes
+# Specify the default geom_point()
+# Specify the titles, x and y labels
+# Add the regression line
+# Centrally align the title text
+
+ggplot2::ggplot(airquality_data) +
+                aes(x=wind, y=ozone) +
+                geom_point() +
+                labs(x="Wind (miles per hours)", 
+                     y = "Ozone concentration (per billions)") +
+                ggtitle("Ozone Concentration and Wind Speed from May till September") + 
+                theme(plot.title = element_text(hjust = 0.5)) 
+```
+
+As you can see the graph does not suggest a linear relationship between ozone and wind. We saw in the previous diagnostic plots that the regression assumptions were not fulfilled. We saw that the data was non-linear and residuals did not have equal variance. We can use variance stabilising transformations such as $\log(Y)$ when we see increasing variance in a fitted versus residuals plot. Hence, we will use the logarithm transformation which causes our mathematical equation of regression model to look like this:
+
+$$
+\log(ozone_i)=\beta_0+\beta_1*wind_i * \epsilon_i
+$$
+
+```{r}
+log_model <- lm(formula=ozone ~ wind, data=airquality_data)
+plot(log_model,1)
+summary(log_model)
+
+new_wind <- data.frame(wind = c(23))
+# Use the predict function on new values
+# And also get confidence intervals for these
+predict(log_model, newdata = new_wind, interval = "confidence") 
+
+
+new_wind <- data.frame(wind = c(24))
+predict(log_model, newdata = new_wind, interval = "confidence") 
+
+
+```
+
+```{r}
+log_model <- lm(formula=log(ozone) ~ wind, data=airquality_data)
+plot(log_model,1)
+summary(log_model)
+new_wind <- data.frame(wind = c(23))
+
+# Use the predict function on new values
+# And also get confidence intervals for these
+predict(log_model, newdata = new_wind, interval = "confidence") 
+
+new_wind <- data.frame(wind = c(24))
+
+# Use the predict function on new values
+# And also get confidence intervals for these
+predict(log_model, newdata = new_wind, interval = "confidence") 
+
+
+```
+
+## 7.1 Exercise-5
+
+Apply the logarithmic transformation on the multiple linear regression containing all explanatory variables from airquality_data.
+
+[***\
+The solution can be located in Section 11, which is situated at the end of this document.***]{.underline}
+
+```{r eval=FALSE, include=FALSE}
+# Apply logarithmic transformation on multiple linear regression 
+# containing all explanatory variables 
+log_model_exercise <- lm(formula=log(ozone) ~ ., data =airquality_data) 
+summary(log_model_exercise)
+
+```
+
+# 8. Model Comparison - R-squared, RMSE, RSE, MAE
+
+Now we will compare two multiple linear regression models.
+
+```{r}
+# Multiple linear regression
+# the response variable is ozone 
+# explanatory variables are temp and solar_r
+
+model_one <- lm(formula=ozone ~ temp + solar_r, data=airquality_data)
+
+# Multiple linear regression
+# the response variable is ozone 
+# all explanatory variable 
+
+model_two <- lm(formula=ozone ~ ., data=airquality_data)
+#We will use the glance function in the broom package (broom package is in tidyverse) 
+#to compare both models.
+
+broom::glance(model_one)
+broom::glance(model_two)
+```
+
+## 8.1 Exercise-6
+
+1.  Create two multiple linear regressions as follows:
+
+    Model-1= ozone =solar_r +month
+
+    Model-2=ozone=all variables
+
+    ```{r eval=FALSE, include=FALSE}
+    # Multiple linear regression
+    # the response variable is ozone 
+    # explanatory variables are month and solar_r
+
+    model_one_exercise <- lm(formula=ozone ~ solar_r + month, data=airquality_data)
+
+    # Multiple linear regression
+    # the response variable is ozone 
+    # all explanatory variable 
+
+    model_two_exercise <- lm(formula=ozone ~ ., data=airquality_data)
+    ```
+
+2.  Compare both models using the `glance()` function, which model is better?
+
+    ```{r eval=FALSE, include=FALSE}
+    # computes the R2, adjusted R2, sigma (RSE), AIC, BIC 
+    # of model one
+
+    broom::glance(model_one_exercise)
+    broom::glance(model_two_exercise)
+    ```
+
+    [***\
+    The solution can be located in Section 11, which is situated at the end of this document.***]{.underline}
+
+# 9. Multicollinearity
+
+```{r}
+# Multiple linear regression
+# the response variable is ozone 
+# all explanatory variable 
+
+model <- lm(formula=ozone ~ ., data=airquality_data)
+#We will use the glance function in the broom package (broom package is in tidyverse) 
+#to compare both models.
+
+car:: vif(model_two)
+
+```
+
+# 10. Model selection
+
+## **Best subset linear model using `leaps::regsubsets()`**
+
+```{r}
+# Use the regsubsets() function to get the best model
+# Specify the method to be seqrep (sequential replacement)
+# Set nvmax to be 5 since we have 5 explanatory variables
+
+airquality_data=read.csv('airquality_data.csv')
+best_model <- leaps::regsubsets(ozone~., data = airquality_data, nvmax = 5, method = "seqrep")
+# summary() reports the best set of variables for each model size
+
+summarise_model <- summary(best_model)
+
+summarise_model
+
+# Find which model has the maximum Adjusted R2
+# and minimum residual sum of square RSS
+# and minimum BIC
+
+data.frame(Adj_R2 = which.max(summarise_model$adjr2),
+           RSS = which.min(summarise_model$rss),BIC = which.min(summarise_model$bic))
+```
+
+## **Stepwise Selection**
+
+The stepwise selection consists of iteratively adding and removing explanatory variables into the regression model, to find the subset of variables in the data set resulting in the best performing model; that is a model that lowers prediction error.
+
+-   **Forward selection:** It starts with no explanatory variables in the regression model, iteratively adds the most contributive explanatory variables, and stops when the improvement is no longer statistically significant.
+
+-   **Backward selection:** It starts with all explanatory variables in the model, iteratively removes the least contributive explanatory variable, and stops when you have a model where all explanatory variables are statistically significant.
+
+-   **Stepwise selection:** It is a combination of forward and backward selections. You start with no explanatory variables, then sequentially add the most contributive explanatory variables (like forward selection). After adding each new variable, remove any variables that no longer provide an improvement in the model fit (like backward selection).
+
+We can run a backward selection in R as shown below:
+
+```{r}
+airquality_data=read.csv('airquality_data.csv')
+full_model <- lm(formula=ozone~., data = airquality_data)
+
+backward_selection <- step(full_model, direction = "backward")
+```
+
+# 11. Exercise solutions:
+
+## **Exercise 1**
+
+-   
+
+    ```{r Exercise 2.3, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+    # Fit linear model using lm()
+    simple_model_exercise <- lm(formula=ozone ~ temp, data=airquality_data)
+
+    # Get a summary of the model
+    summary(simple_model_exercise)
+
+    #Intercept interpretation: The model predicted mean ozone concentration is -101.6 parts 
+    #in billion when the temperature is 0 degrees Fahrenheit.
+
+    #Slope interpretation: If the temperature increase by 1 degree Fahrenheit, 
+    #we predict the daily average ozone concentration increases by 1.85 parts per billion
+    ```
+
+    \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+    ## Exercise 2
+
+    ```{r Exercise 3.1.1, echo=TRUE}
+    # Add some new data
+    simple_model_exercise <- lm(formula=ozone ~ temp, data=airquality_data)
+
+    new_temp <- data.frame(temp = c(48, 52, 55))
+
+    # Use the predict function on new values
+    # And also get confidence intervals for these
+    predict(simple_model_exercise, newdata = new_temp, interval = "confidence")
+    ```
+
+    \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+    ## Exercise 3
+
+    ```{r Exercise 4.1, echo=TRUE}
+    # First specify your formula then the dataset 
+    multiple_model_exercise <- lm(formula=ozone ~ wind + temp + solar_r, data=airquality_data) 
+    # Get a summary of the model 
+    summary(multiple_model_exercise)
+    ```
+
+    \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+    ## Exercise 4
+
+    ```{r Ex6.1.1, echo=TRUE}
+    # Fit a multiple linear regression
+    # the response variable is ozone 
+    # all explanatory variable 
+    airData <- read.csv('airquality_data.csv')
+    multiple_exercise <- lm(formula=ozone ~ ., data=airData)
+    summary(multiple_exercise)
+    ```
+
+    Let's change the panel layout to 2 x 2 to look at all 4 plots at once
+
+    ```{r Ex6.1.2, echo=TRUE}
+    # Change the panel layout to 2 x 2
+    # Look at all 4 plots at once 
+    par(mfrow = c(2, 2))
+
+    # Use plot() function to create diagnostic plots
+    plot(multiple_exercise)
+    ```
+
+    \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+    ## Exercise 5
+
+    ```{r ex7.1, echo=TRUE}
+    # Apply logarithmic transformation on multiple linear regression 
+    # containing all explanatory variables 
+    log_model_exercise <- lm(formula=log(ozone) ~ ., data =airquality_data) 
+    summary(log_model_exercise)
+    ```
+
+    \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+    ## Exercise 6
+
+    1.  Create two multiple linear regressions as follows:
+
+        Model-1= ozone =solar_r +month
+
+        Model-2=ozone=all variables
+
+        ```{r echo=FALSE}
+        # Multiple linear regression
+        # the response variable is ozone 
+        # explanatory variables are month and solar_r
+
+        model_one_exercise <- lm(formula=ozone ~ solar_r + month, data=airquality_data)
+
+        # Multiple linear regression
+        # the response variable is ozone 
+        # all explanatory variable 
+
+        model_two_exercise <- lm(formula=ozone ~ ., data=airquality_data)
+        ```
+
+    2.  Compare both models using the `glance()` function, which model is better?
+
+        ```{r echo=FALSE}
+        # computes the R2, adjusted R2, sigma (RSE), AIC, BIC 
+        # of model one
+
+        broom::glance(model_one_exercise)
+        broom::glance(model_two_exercise)
+        ```
