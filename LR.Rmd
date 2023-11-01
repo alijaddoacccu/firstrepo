@@ -1,5 +1,5 @@
 ---
-title: "Session-2, Linear Regression: Examples and Exercises"
+title: "Summer School-Session-2, Linear Regression: Examples and Exercises"
 author: "Ali Jaddoa, BSc, MSc, PhD Computer Science, email: Ali.Jaddoa@Canterbury.ac.uk"
 
 date: "08/09/2023"
